@@ -66,7 +66,7 @@ def sae_loss(activations, ae, sparsity_penalty, use_entropy=False, separate=Fals
 
     if not ghost_grads: # if we're not doing ghost grads
         x_hat, f = ae(in_acts, output_features=True)
-        mse_loss = t.linalg.norm(out_acts - x_hat, dim=-1).mean()
+        mse_loss = t.linalg.norm(out_acts - x_hat, dim=-1).mean() / (out_acts).norm(dim=-1).mean()        
     
     else: # if we're doing ghost grads        
         x_hat, x_ghost, f = ae(in_acts, output_features=True, ghost_mask=ghost_mask)
@@ -89,12 +89,23 @@ def sae_loss(activations, ae, sparsity_penalty, use_entropy=False, separate=Fals
         sparsity_loss = entropy(f)
     else:
         sparsity_loss = f.norm(p=1, dim=-1).mean()
+
+    
     
     if separate:
+        #metrics
+        metrics = dict()
+        L2 = out_acts.norm(dim=1)
+        L1 = out_acts.abs().sum(dim=1)
+        zero_act = L2 == 0
+        metrics['approx_L0'] = ((L1[~zero_act]/L2[~zero_act])**2).mean()
+        metrics['zero_act_frac'] = zero_act.sum()/len(L2)
+        metrics['L0'] = (activations[~zero_act] > 1e-5).sum(dim=1, dtype=torch.float).mean()
+        
         if ghost_threshold is None:
-            return mse_loss, sparsity_loss
+            return mse_loss, sparsity_loss, metrics
         else:
-            return mse_loss, sparsity_loss, ghost_loss
+            return mse_loss, sparsity_loss, ghost_loss, metrics
     else:
         if not ghost_grads:
             return mse_loss + sparsity_penalty * sparsity_loss
@@ -202,11 +213,11 @@ def trainSAE(
             with t.no_grad():
                 losses = sae_loss(acts, ae, sparsity_penalty, entropy, separate=True, num_samples_since_activated=num_samples_since_activated, ghost_threshold=ghost_threshold)
                 if ghost_threshold is None:
-                    mse_loss, sparsity_loss = losses
-                    print(f"step {step} MSE loss: {mse_loss}, sparsity loss: {sparsity_loss}")
+                    mse_loss, sparsity_loss, metrics = losses
+                    print(f"step {step} MSE loss: {mse_loss:.4f}, L1 loss: {sparsity_loss:.4f}, L0: {metrics['L0']}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
                 else:
-                    mse_loss, sparsity_loss, ghost_loss = losses
-                    print(f"step {step} MSE loss: {mse_loss}, sparsity loss: {sparsity_loss}, ghost_loss: {ghost_loss}")
+                    mse_loss, sparsity_loss, ghost_loss, metrics = losses
+                    print(f"step {step} MSE loss: {mse_loss}, L1 loss: {sparsity_loss}, ghost_loss: {ghost_loss}, L0: {metrics['L0']}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
                 # dict_acts = ae.encode(acts)
                 # print(f"step {step} % inactive: {(dict_acts == 0).all(dim=0).sum() / dict_acts.shape[-1]}")
                 # if isinstance(activations, ActivationBuffer):
