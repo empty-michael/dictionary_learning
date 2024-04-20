@@ -100,7 +100,7 @@ def sae_loss(activations, ae, sparsity_penalty, use_entropy=False, separate=Fals
         zero_act = L2 == 0
         metrics['approx_L0'] = ((L1[~zero_act]/L2[~zero_act])**2).mean()
         metrics['zero_act_frac'] = zero_act.sum()/len(L2)
-        metrics['L0'] = (activations[~zero_act] > 1e-5).sum(dim=1, dtype=torch.float).mean()
+        metrics['L0'] = (activations[~zero_act] > 1e-5).sum(dim=1, dtype=t.float).mean()
         
         if ghost_threshold is None:
             return mse_loss, sparsity_loss, metrics
