@@ -214,10 +214,10 @@ def trainSAE(
                 losses = sae_loss(acts, ae, sparsity_penalty, entropy, separate=True, num_samples_since_activated=num_samples_since_activated, ghost_threshold=ghost_threshold)
                 if ghost_threshold is None:
                     mse_loss, sparsity_loss, metrics = losses
-                    print(f"step {step} MSE loss: {mse_loss:.4f}, L1 loss: {sparsity_loss:.4f}, L0: {metrics['L0']}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
+                    print(f"step {step} MSE loss: {mse_loss:.4f}, L1 loss: {sparsity_loss:.4f}, L0: {metrics['L0']:.4f}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
                 else:
                     mse_loss, sparsity_loss, ghost_loss, metrics = losses
-                    print(f"step {step} MSE loss: {mse_loss}, L1 loss: {sparsity_loss}, ghost_loss: {ghost_loss}, L0: {metrics['L0']}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
+                    print(f"step {step} MSE loss: {mse_loss}, L1 loss: {sparsity_loss}, ghost_loss: {ghost_loss}, L0: {metrics['L0']:.4f}, Approx L0: {metrics['approx_L0']:.4f}, Zero Act. Samples: {metrics['zero_act_frac']:.4f}")
                 # dict_acts = ae.encode(acts)
                 # print(f"step {step} % inactive: {(dict_acts == 0).all(dim=0).sum() / dict_acts.shape[-1]}")
                 # if isinstance(activations, ActivationBuffer):
